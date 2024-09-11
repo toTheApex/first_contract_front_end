@@ -8,23 +8,23 @@ import { useTonConnect } from "./useTonConnect";
 
 export function useMainContract() {
   const client = useTonClient();
+  const { sender } = useTonConnect();
+
+  const sleep = (time: number) =>
+    new Promise((resolve) => setTimeout(resolve, time));
+
   const [contractData, setContractData] = useState<null | {
     counter_value: number;
     recent_sender: Address;
     owner_address: Address;
   }>();
-  
-  const { sender } = useTonConnect();
-    
-  const sleep = (time: number) => new Promise((resolve) => setTimeout(resolve, time));
-    
 
   const [balance, setBalance] = useState<null | number>(0);
 
   const mainContract = useAsyncInitialize(async () => {
     if (!client) return;
     const contract = new MainContract(
-      Address.parse("EQCnX5WFgrfw0kjCvmxrUoGFmrr9I1z36BqJcM1gPxfo0S3K") // replace with your address from tutorial 2 step 8
+      Address.parse("EQBDUxTxWo41aCY1SGZJJlDnu4uKvZtbOjuGF9mtf22M1UBq") // replace with your address from tutorial 2 step 8
     );
     return client.open(contract) as OpenedContract<MainContract>;
   }, [client]);
@@ -41,30 +41,28 @@ export function useMainContract() {
         owner_address: val.owner_address,
       });
       setBalance(balance);
-      await sleep(10000); // sleep 10 seconds and poll value again
+      await sleep(5000); // sleep 5 seconds and poll value again
       getValue();
     }
     getValue();
   }, [mainContract]);
 
-//   return {
-//     contract_address: mainContract?.address.toString(),
-//     contract_balance: balance,
-//     ...contractData,
-//   };
-    return {
-        counter_value: contractData?.counter_value,
-        owner_address: contractData?.owner_address.toString(),
-        balance: balance,
-        contract_address: mainContract?.address.toString(),
-        sendIncrement: () => {
-        return mainContract?.sendIncrement(sender, toNano(0.001), 2);
-        },
-        sendDeposit: () => {
-        return mainContract?.sendDeposit(sender, toNano(0.01));
-        },
-        sendWithdrawalRequest: () => {
-        return mainContract?.sendWithdrawalRequest(sender, toNano(0.01), toNano(0.02));
-        }
-    };
+  return {
+    contract_address: mainContract?.address.toString(),
+    contract_balance: balance,
+    ...contractData,
+    sendIncrement: async () => {
+      return mainContract?.sendIncrement(sender, toNano("0.05"), 5);
+    },
+    sendDeposit: async () => {
+      return mainContract?.sendDeposit(sender, toNano("1"));
+    },
+    sendWithdrawalRequest: async () => {
+      return mainContract?.sendWithdrawalRequest(
+        sender,
+        toNano("0.05"),
+        toNano("0.7")
+      );
+    },
+  };
 }
